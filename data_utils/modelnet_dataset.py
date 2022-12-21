@@ -49,16 +49,13 @@ class ModelNetDataset(Dataset):
         self.uniform = uniform
         self.catfile = os.path.join(self.root, 'modelnet40_shape_names.txt')
 
-        print('WARNING only some object categories are being used')
-        self.cat = [line.rstrip() for line in open(self.catfile)][:20]
+        self.cat = [line.rstrip() for line in open(self.catfile)]
         self.classes = dict(zip(self.cat, range(len(self.cat))))
         self.normal_channel = normal_channel
 
         shape_ids = {}
-        shape_ids['train'] = [line.rstrip() for line in open(os.path.join(self.root, 'modelnet40_train.txt'))
-                              if '_'.join(line.split('_')[:-1]) in self.cat ]
-        shape_ids['test'] = [line.rstrip() for line in open(os.path.join(self.root, 'modelnet40_test.txt'))
-                              if '_'.join(line.split('_')[:-1]) in self.cat ]
+        shape_ids['train'] = [line.rstrip() for line in open(os.path.join(self.root, 'modelnet40_train.txt'))]
+        shape_ids['test'] = [line.rstrip() for line in open(os.path.join(self.root, 'modelnet40_test.txt'))]
 
 
         assert (split == 'train' or split == 'test')
