@@ -1,7 +1,3 @@
-import os
-import sys
-import copy
-import math
 import numpy as np
 import torch
 import torch.nn as nn
@@ -61,7 +57,7 @@ class ReLU(LeakyReLU):
 
 class MeanProject(nn.Module):
     # Section 6
-    def __init__(self, n_emb: int, in_features, f_out):
+    def __init__(self, n_emb: int, in_features, out_features):
         super().__init__()
         self.weight = nn.Parameter(torch.zeros((n_emb, out_features, in_features), dtype=torch.float32))
         nn.init.uniform_(self.weight, -1/np.sqrt(in_features), 1/np.sqrt(in_features))
@@ -106,13 +102,11 @@ class LayerNorm(nn.Module):
         '''
         x: point features of shape [B, N_feat, 3, N_points]
         '''
-        # row-wise norm
-        x_rownorm = torch.norm(x, dim=2)
+        norm = torch.norm(x, dim=2) + EPS
+        norm_ln = self.layernorm(norm.transpose(1,2)).transpose(1,2)
+        x = x / norm.unsqueeze(2) * norm_ln.unsqueeze(2)
 
-        x_layernorm = self.layernorm(x_rownorm.transpose(1,2)).transpose(1,2)
-
-        y = (x / x_rownorm.unsqueeze(2)) * x_layernorm.unsqueeze(2).expand(x.size())
-        return y
+        return x
 
 
 class MultiHeadAttention(nn.Module):
@@ -181,14 +175,17 @@ class TransformerBlock(nn.Module):
         self.mlp = nn.Sequential(
             Linear(f_dim, f_dim),
             BatchNorm(f_dim),
-            ReLU(f_dim)
+            ReLU(f_dim),
+            # in the original Attention is all.. the FF has Linear,ReLU,Linear
+            # but that is not how vn-tfm describes the mlp
+            Linear(f_dim, f_dim),
         )
         self.layer_norm2 = LayerNorm(f_dim)
 
     def forward(self, x, queries=None):
         '''
-        use queries for encoder (queries = MeanProject(x)) or
-        for decoder (queries = original pc representation)
+        use queries for PerceiverIO-style encoder (queries = MeanProject(x)) or
+        decoder (queries = original pc representation)
         '''
         if queries is None:
             queries = x
@@ -199,10 +196,10 @@ class TransformerBlock(nn.Module):
         x = self.layer_norm1(x)
         x += identity
 
-        identity = x
+        new_identity = x
         x = self.mlp(x)
         x = self.layer_norm2(x)
-        x += identity
+        x += new_identity
 
         return x
 

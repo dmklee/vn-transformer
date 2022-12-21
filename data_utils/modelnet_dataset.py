@@ -5,9 +5,10 @@ https://github.com/FlyingGiraffe/vnn/blob/master/data_utils/ModelNetDataLoader.p
 import numpy as np
 import warnings
 import os
+import torch
 from torch.utils.data import Dataset
+from scipy.spatial.transform import Rotation
 warnings.filterwarnings('ignore')
-
 
 
 def pc_normalize(pc):
@@ -44,16 +45,21 @@ class ModelNetDataset(Dataset):
     def __init__(self, root,  npoint=1024, split='train', uniform=False, normal_channel=True, cache_size=15000):
         self.root = root
         self.npoints = npoint
+        self.split = split
         self.uniform = uniform
         self.catfile = os.path.join(self.root, 'modelnet40_shape_names.txt')
 
-        self.cat = [line.rstrip() for line in open(self.catfile)]
+        print('WARNING only some object categories are being used')
+        self.cat = [line.rstrip() for line in open(self.catfile)][:20]
         self.classes = dict(zip(self.cat, range(len(self.cat))))
         self.normal_channel = normal_channel
 
         shape_ids = {}
-        shape_ids['train'] = [line.rstrip() for line in open(os.path.join(self.root, 'modelnet40_train.txt'))]
-        shape_ids['test'] = [line.rstrip() for line in open(os.path.join(self.root, 'modelnet40_test.txt'))]
+        shape_ids['train'] = [line.rstrip() for line in open(os.path.join(self.root, 'modelnet40_train.txt'))
+                              if '_'.join(line.split('_')[:-1]) in self.cat ]
+        shape_ids['test'] = [line.rstrip() for line in open(os.path.join(self.root, 'modelnet40_test.txt'))
+                              if '_'.join(line.split('_')[:-1]) in self.cat ]
+
 
         assert (split == 'train' or split == 'test')
         shape_names = ['_'.join(x.split('_')[0:-1]) for x in shape_ids[split]]
@@ -79,7 +85,9 @@ class ModelNetDataset(Dataset):
             if self.uniform:
                 point_set = farthest_point_sample(point_set, self.npoints)
             else:
-                point_set = point_set[0:self.npoints,:]
+                ind = np.arange(len(point_set))
+                np.random.shuffle(ind)
+                point_set = point_set[ind[:self.npoints], :]
 
             point_set[:, 0:3] = pc_normalize(point_set[:, 0:3])
 
@@ -89,7 +97,18 @@ class ModelNetDataset(Dataset):
             if len(self.cache) < self.cache_size:
                 self.cache[index] = (point_set, cls)
 
+        if self.split == 'train':
+            # perform data augmentation with rotate, rescale, shift
+
+            point_set = point_set @ Rotation.random().as_matrix().astype(np.float32)
+            point_set *= np.random.uniform(0.8, 1.25)
+            point_set += np.random.uniform(-0.1, 0.1, size=3)
+
+        point_set = torch.from_numpy(point_set).unsqueeze(0).transpose(1,2)
+        cls = torch.from_numpy(cls).long()
         return point_set, cls
 
     def __getitem__(self, index):
         return self._get_item(index)
+
+

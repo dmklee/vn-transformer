@@ -4,10 +4,14 @@
 
 
 ### Replicating results from paper
-ModelNet40 Classification
+#### ModelNet40 Classification
+Download the data from [here](https://shapenet.cs.stanford.edu/media/modelnet40_normal_resampled.zip).  Run the following
+script to train the model (it takes around 1 min per epoch on 2080).
 ```
-python train_modelnet_cls.py
+python train_modelnet_cls.py --data_path=path/to/modelnet40_normal_resampled
 ```
+So far, I have not been able to replicate the results from the paper.  Currently, running a hyperparameter search
+based on Table 5. 
 
 ### ToDo:
 - [ ] Replicate results on ModelNet40 Classification
