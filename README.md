@@ -1,4 +1,4 @@
-## Implementation of VectorNeuron-Transformer paper
+## Implementation of VectorNeuron-Transformer paper (wip)
 
 [VN-Transformer Paper](https://arxiv.org/pdf/2206.04176.pdf) | [VectorNeuron Paper](https://arxiv.org/pdf/2104.12229.pdf)
 
