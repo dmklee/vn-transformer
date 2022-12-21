@@ -3,7 +3,7 @@
 [VN-Transformer Paper](https://arxiv.org/pdf/2206.04176.pdf) | [VectorNeuron Paper](https://arxiv.org/pdf/2104.12229.pdf)
 
 
-### Replicating results from paper
+### Runnin Experiments from Paper
 #### ModelNet40 Classification
 Download the data from [here](https://shapenet.cs.stanford.edu/media/modelnet40_normal_resampled.zip).  Run the following
 script to train the model (it takes around 1 min per epoch on 2080).
