@@ -102,6 +102,7 @@ class ModelNetDataset(Dataset):
             point_set += np.random.uniform(-0.1, 0.1, size=3)
 
         point_set = torch.from_numpy(point_set).unsqueeze(0).transpose(1,2)
+
         cls = torch.from_numpy(cls).long()
         return point_set, cls
 

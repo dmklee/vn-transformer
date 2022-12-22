@@ -6,12 +6,11 @@
 ### Runnin Experiments from Paper
 #### ModelNet40 Classification
 Download the data from [here](https://shapenet.cs.stanford.edu/media/modelnet40_normal_resampled.zip).  Run the following
-script to train the model (it takes around 1 min per epoch on 2080).
+script to train the model (it takes around 1 min per epoch on NVIDIA 2080).
 ```
 python train_modelnet_cls.py --data_path=path/to/modelnet40_normal_resampled
 ```
-So far, I have not been able to replicate the results from the paper.  Currently, running a hyperparameter search
-based on Table 5. 
+So far, I have not been able to replicate the results from the paper.  Currently, running a hyperparameter search based on Table 5.  The best I have gotten is 79.4% test acc after 1000 epochs (256hidden, 32heads, 64latent).
 
 ### ToDo:
 - [ ] Replicate results on ModelNet40 Classification

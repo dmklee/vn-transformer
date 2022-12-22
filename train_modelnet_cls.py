@@ -25,10 +25,10 @@ class InvariantClassifier(nn.Module):
         self.vn_mlp = nn.Sequential(
             vn.Linear(in_features, hidden_features, bias_eps),
             vn.BatchNorm(hidden_features),
-            vn.ReLU(hidden_features),
+            vn.LeakyReLU(hidden_features, args.leaky),
             vn.Linear(hidden_features, hidden_features, bias_eps),
             vn.BatchNorm(hidden_features),
-            vn.ReLU(hidden_features),
+            vn.LeakyReLU(hidden_features, args.leaky),
         )
 
         if latent_size is not None:
@@ -36,20 +36,18 @@ class InvariantClassifier(nn.Module):
         else:
             self.query_proj = nn.Identity()
 
-        self.vn_transformer = vn.TransformerBlock(f_dim=hidden_features,
-                                                  num_heads=num_heads,
-                                                  bias_eps=bias_eps,
-                                                 )
+        self.vn_transformer = vn.TransformerBlock(f_dim=hidden_features, num_heads=num_heads, bias_eps=bias_eps, leaky=args.leaky)
 
         self.vn_mlp_inv = nn.Sequential(
             vn.Linear(hidden_features, 3, bias_eps),
-            vn.ReLU(3),
+            vn.LeakyReLU(3, args.leaky),
         )
 
         self.mlp = nn.Sequential(
-            nn.Linear(hidden_features*3, hidden_features)
+            nn.Linear(hidden_features*3, hidden_features),
+            nn.ReLU(True),
+            nn.Linear(hidden_features, num_classes)
         )
-
 
     def forward(self, x):
         '''
@@ -190,15 +188,16 @@ if __name__ == "__main__":
     parser.add_argument('--results_path', type=str, default='./results')
     parser.add_argument('--seed', type=int, default=0)
 
-    parser.add_argument('--num_epochs', type=int, default=100)
+    parser.add_argument('--num_epochs', type=int, default=1000)
     parser.add_argument('--learning_rate', type=float, default=1e-3)
-    parser.add_argument('--batch_size', type=int, default=128)
+    parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--pc_size', type=int, default=1024)
 
-    parser.add_argument('--hidden_features', type=int, default=128)
-    parser.add_argument('--num_heads', type=int, default=16)
+    parser.add_argument('--hidden_features', type=int, default=256)
+    parser.add_argument('--num_heads', type=int, default=64)
     parser.add_argument('--latent_size', type=int, default=64)
-    parser.add_argument('--bias_eps', type=float, default=0)
+    parser.add_argument('--bias_eps', type=float, default=1e-6)
+    parser.add_argument('--leaky', type=float, default=0.0)
     parser.add_argument('--device', type=str, default='cuda')
 
 
@@ -208,3 +207,4 @@ if __name__ == "__main__":
 
     main(args)
 
+    # things to try...

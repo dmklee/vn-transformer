@@ -111,7 +111,7 @@ class LayerNorm(nn.Module):
 
 class MultiHeadAttention(nn.Module):
     # Section 4.2
-    def __init__(self, emb_dim, num_heads):
+    def __init__(self, emb_dim: int, num_heads: int):
         super().__init__()
         assert emb_dim % num_heads == 0, 'Embeddings must split evenly amongst heads'
 
@@ -167,6 +167,7 @@ class TransformerBlock(nn.Module):
                  f_dim,
                  num_heads,
                  bias_eps=1e-6,
+                 leaky=0,
                 ):
         super().__init__()
         self.attention = MultiHeadAttention(f_dim, num_heads)
@@ -175,7 +176,7 @@ class TransformerBlock(nn.Module):
         self.mlp = nn.Sequential(
             Linear(f_dim, f_dim),
             BatchNorm(f_dim),
-            ReLU(f_dim),
+            LeakyReLU(f_dim, leaky),
             # in the original Attention is all.. the FF has Linear,ReLU,Linear
             # but that is not how vn-tfm describes the mlp
             Linear(f_dim, f_dim),
@@ -245,65 +246,3 @@ def split_heads(x, num_heads):
     B,C,_,N = x.shape
     assert C % num_heads == 0
     return x.view(B, num_heads, C//num_heads, 3, N)
-
-
-if __name__ == "__main__":
-    # B, C, N = 50, 32, 128
-    # x = torch.randn((B, C, 3, N), dtype=torch.float32).cuda()
-    # y = torch.randn((B, 3, 3, N), dtype=torch.float32).cuda()
-
-    # from scipy.spatial.transform import Rotation
-    # rot = torch.from_numpy(Rotation.random(B).as_matrix()).float().cuda()
-    # # out = invariant(x,y)
-    # # out_rot = invariant(rotate_point_features(x, rot), rotate_point_features(y, rot))
-    # # print(torch.linalg.norm(out - out_rot))
-
-    # import time
-    # times = []
-    # for _ in range(1000):
-        # torch.cuda.synchronize()
-        # start = time.time()
-        # invariant(x, y)
-        # times.append(time.time() - start)
-    # print('old', sum(times)/len(times))
-
-
-    # exit()
-    B = 5
-    C = 8
-    N = 50
-    M = 60
-    H = 2
-    Q = torch.randn((B, C, 3, M), dtype=torch.float32).cuda()
-    K = torch.randn((B, C, 3, N), dtype=torch.float32).cuda()
-    Z = torch.randn((B, C+3, 3, N), dtype=torch.float32).cuda()
-
-    vnatt = MultiHeadAttention(C, H).cuda()
-    vnatt(Q,K,K)
-    exit()
-    # vn = VNLinear(C, 2*C)
-    vn = VNMeanProject(100, C, C+3)
-    vn.check_equivariance()
-    vn.check_invariance()
-    # vn(Q)
-    # exit()
-
-    # W = nn.Parameter(torch.randn((C, 2*C), dtype=torch.float32)).cuda()
-    # print(vn.map_to_feat.weight.shape)
-    # vnatt.check_equivariance()
-    # exit()
-
-
-    # times = []
-    # for _ in range(1000):
-        # torch.cuda.synchronize()
-        # start = time.time()
-        # vnatt.forward_new(Q, K, Z)
-        # times.append(time.time() - start)
-    # print('new', sum(times)/len(times))
-
-    # H = 7
-    # vnatt = VNMultiHeadAttention(H, C, 4, C+1)
-    # vnatt.check_equivariance()
-
-    exit()
